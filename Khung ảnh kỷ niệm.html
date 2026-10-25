@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#063b98">
+<title>Khung ảnh kỷ niệm 20 năm - THPT Tam Dương II</title>
+<style>
+:root{--gold:#ffd45e}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:white;background:radial-gradient(ellipse at top,#1678ed 0,#073c9c 45%,#031947 100%)}
+header{text-align:center;padding:24px 14px 12px}h1{font-size:clamp(22px,4vw,34px);margin:0 0 7px}header p{margin:0;color:#e0edff}
+main{width:min(1120px,100%);margin:auto;padding:16px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(270px,.85fr);gap:20px;align-items:start}
+.card{padding:16px;border:1px solid #ffffff45;border-radius:18px;background:#ffffff12;box-shadow:0 14px 35px #00143d55}
+.preview{position:relative;width:100%;aspect-ratio:1;background:#063b98;overflow:hidden;border-radius:10px;touch-action:none}
+#photo{position:absolute;max-width:none;display:none;left:50%;top:50%;transform-origin:center;user-select:none;pointer-events:none}
+#frame{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none}
+#placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#eaf2ff;padding:25px;pointer-events:none}
+#placeholder b{display:block;font-size:46px}h2{font-size:20px;margin:0 0 15px}
+label{display:block;font-size:14px;font-weight:700;margin:15px 0 8px}input[type=file]{display:none}
+.pick,button{border:0;border-radius:11px;padding:12px 14px;font:700 14px system-ui;cursor:pointer}
+.pick{display:block;text-align:center;background:white;color:#063b98}input[type=range]{width:100%;accent-color:var(--gold)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+button.secondary{color:white;background:#ffffff18;border:1px solid #ffffff55}button.primary{background:var(--gold);color:#17234a}
+button:disabled{opacity:.45;cursor:not-allowed}.note{font-size:13px;line-height:1.55;color:#e1ecff;margin:15px 0 0}
+footer{text-align:center;color:#d5e4ff;font-size:12px;padding:0 12px 25px}
+@media(max-width:760px){main{grid-template-columns:1fr;padding:12px;gap:12px}.card{padding:12px}.preview{max-width:600px;margin:auto}}
+</style>
+</head>
+<body>
+<header><h1>Khung ảnh kỷ niệm 20 năm</h1><p>Trường THPT Tam Dương II · 2006–2026</p></header>
+<main>
+<section class="card"><div class="preview" id="preview">
+<div id="placeholder"><div><b>🖼️</b><strong>Chọn ảnh chân dung để bắt đầu</strong><br><small>Ảnh sẽ hiển thị phía sau khung kỷ niệm</small></div></div>
+<img id="photo" alt="Ảnh chân dung"><img id="frame" src="khung-20-nam.png" alt="Khung kỷ niệm 20 năm">
+</div></section>
+<section class="card">
+<h2>Tạo ảnh kỷ niệm</h2>
+<label class="pick" for="file">＋ Chọn ảnh từ thiết bị</label><input id="file" type="file" accept="image/*">
+<label for="zoom">Phóng to / thu nhỏ</label><input id="zoom" type="range" min="0.5" max="3" step="0.01" value="1" disabled>
+<div class="row"><button class="secondary" id="fit" disabled>Căn vừa khung</button><button class="secondary" id="reset" disabled>Đặt lại</button></div>
+<div class="row"><button class="secondary" id="left" disabled>← Sang trái</button><button class="secondary" id="right" disabled>Sang phải →</button><button class="secondary" id="up" disabled>↑ Lên</button><button class="secondary" id="down" disabled>↓ Xuống</button></div>
+<button class="primary" id="save" style="width:100%;margin-top:12px" disabled>⬇ Tải ảnh hoàn chỉnh (PNG)</button>
+<p class="note">Chọn ảnh, kéo để căn chỉnh, dùng thanh trượt để phóng to hoặc thu nhỏ. Nhấn tải ảnh để lưu kết quả. Ảnh được xử lý ngay trên trình duyệt, không tải lên máy chủ.</p>
+</section></main>
+<footer>Khung ảnh kỷ niệm 20 năm · THPT Tam Dương II</footer>
+<script>
+const preview=document.querySelector('#preview'),photo=document.querySelector('#photo'),frame=document.querySelector('#frame'),file=document.querySelector('#file'),zoom=document.querySelector('#zoom'),placeholder=document.querySelector('#placeholder');
+const buttons=['fit','reset','left','right','up','down','save'].map(id=>document.getElementById(id));
+let source=new Image(),objectURL='',scale=1,offsetX=0,offsetY=0,drag=false,sx=0,sy=0,ox=0,oy=0;
+function enabled(on){zoom.disabled=!on;buttons.forEach(b=>b.disabled=!on)}
+function paint(){if(!source.naturalWidth)return;const side=preview.clientWidth,factor=side/Math.max(source.naturalWidth,source.naturalHeight)*scale;photo.style.width=source.naturalWidth+'px';photo.style.height=source.naturalHeight+'px';photo.style.transform=`translate(calc(-50% + ${offsetX}px),calc(-50% + ${offsetY}px)) scale(${factor})`}
+function fit(){scale=1;offsetX=0;offsetY=0;zoom.value='1';paint()}
+file.addEventListener('change',()=>{const f=file.files&&file.files[0];if(!f)return;if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(f);source=new Image();source.onload=()=>{photo.src=objectURL;photo.style.display='block';placeholder.style.display='none';enabled(true);fit()};source.onerror=()=>alert('Không đọc được ảnh. Hãy chọn ảnh khác.');source.src=objectURL});
+zoom.addEventListener('input',()=>{scale=Number(zoom.value);paint()});
+document.querySelector('#fit').onclick=fit;document.querySelector('#reset').onclick=fit;
+document.querySelector('#left').onclick=()=>{offsetX-=12;paint()};document.querySelector('#right').onclick=()=>{offsetX+=12;paint()};document.querySelector('#up').onclick=()=>{offsetY-=12;paint()};document.querySelector('#down').onclick=()=>{offsetY+=12;paint()};
+preview.addEventListener('pointerdown',e=>{if(!source.naturalWidth)return;drag=true;preview.setPointerCapture(e.pointerId);sx=e.clientX;sy=e.clientY;ox=offsetX;oy=offsetY});
+preview.addEventListener('pointermove',e=>{if(!drag)return;offsetX=ox+e.clientX-sx;offsetY=oy+e.clientY-sy;paint()});preview.addEventListener('pointerup',()=>drag=false);preview.addEventListener('pointercancel',()=>drag=false);
+document.querySelector('#save').onclick=()=>{if(!source.naturalWidth)return;const out=1248,canvas=document.createElement('canvas');canvas.width=out;canvas.height=out;const ctx=canvas.getContext('2d'),side=preview.clientWidth,factor=out/side,photoScale=side/Math.max(source.naturalWidth,source.naturalHeight)*scale,dw=source.naturalWidth*photoScale*factor,dh=source.naturalHeight*photoScale*factor;ctx.drawImage(source,out/2+offsetX*factor-dw/2,out/2+offsetY*factor-dh/2,dw,dh);const fr=new Image();fr.onload=()=>{ctx.drawImage(fr,0,0,out,out);canvas.toBlob(blob=>{if(!blob){alert('Không thể xuất ảnh.');return}const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ky-niem-20-nam-td2.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)},'image/png')};fr.onerror=()=>alert('Không tải được khung-20-nam.png');fr.src=frame.src};
+window.addEventListener('resize',paint);frame.onerror=()=>{placeholder.style.display='grid';placeholder.innerHTML='<div><b>⚠️</b>Không tải được khung ảnh. Đặt khung-20-nam.png cùng thư mục với index.html.</div>'};
+</script></body></html>
